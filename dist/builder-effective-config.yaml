@@ -1,0 +1,21 @@
+directories:
+  output: dist
+  buildResources: assets
+appId: com.towdo.desktop
+productName: TowDo
+files:
+  - filter:
+      - dist/**/*
+      - electron/**/*
+extraMetadata:
+  main: electron/main.cjs
+mac:
+  target:
+    - dmg
+    - zip
+  category: public.app-category.productivity
+win:
+  target:
+    - nsis
+    - zip
+electronVersion: 30.5.1
