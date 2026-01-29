@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "towdo-desktop",
   "version": "0.1.0",
   "private": true,
@@ -48,7 +48,9 @@
       "category": "public.app-category.productivity"
     },
     "win": {
-      "target": ["nsis", "zip"]
+      "target": ["nsis", "zip"],
+      "signAndEditExecutable": false
     }
   }
 }
+
