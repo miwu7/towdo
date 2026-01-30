@@ -1,5 +1,5 @@
-﻿import React from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import React from 'react';
+import { CheckCircle2, ChevronLeft, ChevronRight, Circle } from 'lucide-react';
 import { buildMonthGrid, formatDateLabel, formatMonthLabel, getTodayISO, isSameDay } from '../utils/date';
 import { getHolidayLabel, getSolarTermLabel } from '../data/calendarLabels';
 
@@ -11,16 +11,36 @@ const CalendarView = ({
   tasks,
   onOpenTask,
   onOpenDay,
+  onToggleTask,
+  pulseTaskId,
 }) => {
   const days = buildMonthGrid(monthDate);
   const todayISO = getTodayISO();
-  const weekLabels = ['一', '二', '三', '四', '五', '六', '日'];
+  const weekLabels = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
 
-  const MAX_ITEMS = 2;
+  const MAX_ITEMS = 6;
+  const colorPalette = [
+    { bg: 'bg-sky-100', text: 'text-sky-700', border: 'border-sky-200' },
+    { bg: 'bg-emerald-100', text: 'text-emerald-700', border: 'border-emerald-200' },
+    { bg: 'bg-amber-100', text: 'text-amber-700', border: 'border-amber-200' },
+    { bg: 'bg-indigo-100', text: 'text-indigo-700', border: 'border-indigo-200' },
+    { bg: 'bg-rose-100', text: 'text-rose-700', border: 'border-rose-200' },
+    { bg: 'bg-violet-100', text: 'text-violet-700', border: 'border-violet-200' },
+  ];
+
+  const getColorIndex = (seed) => {
+    const str = String(seed ?? '');
+    let hash = 0;
+    for (let i = 0; i < str.length; i += 1) {
+      hash = (hash * 31 + str.charCodeAt(i)) % 2147483647;
+    }
+    return hash % colorPalette.length;
+  };
+
 
   return (
     <div className="flex-1 min-h-0 flex flex-col h-full overflow-hidden animate-in fade-in slide-in-from-right-8 duration-700">
-      <header className="px-6 lg:px-10 py-6 lg:py-8 flex justify-between items-center border-b border-zinc-50">
+      <header className="px-6 lg:px-10 py-6 lg:py-8 flex justify-between items-center border-b border-zinc-100 bg-white">
         <div className="flex items-center gap-6 xl:gap-8">
           <h2 className="text-3xl lg:text-4xl xl:text-5xl font-[900] tracking-[-0.06em] text-zinc-900">
             {formatMonthLabel(monthDate)}
@@ -48,34 +68,35 @@ const CalendarView = ({
         </div>
       </header>
 
-      <div className="grid grid-cols-7 bg-white border-b border-zinc-50">
+      <div className="grid grid-cols-7 bg-white border-b border-zinc-100">
         {weekLabels.map((day) => (
           <div
             key={day}
-            className="p-2 lg:p-3 text-[11px] font-[900] tracking-[0.3em] text-zinc-400 text-center"
+            className="py-2 text-[12px] font-black tracking-[0.2em] text-zinc-400 text-center"
           >
             {day}
           </div>
         ))}
       </div>
 
-      <div className="flex-1 min-h-0 h-full grid grid-cols-7 grid-rows-6 auto-rows-fr bg-zinc-50 gap-px">
+      <div className="flex-1 min-h-0 h-full grid grid-cols-7 grid-rows-6 auto-rows-fr bg-zinc-50">
         {days.map((item) => {
           const tasksThisDay = Array.isArray(tasks) ? tasks.filter((task) => task.date === item.iso) : [];
           const isToday = isSameDay(item.iso, todayISO);
-          const label = formatDateLabel(item.iso);
-          const showOverflow = tasksThisDay.length > MAX_ITEMS;
           const holiday = getHolidayLabel(item.iso);
           const solar = getSolarTermLabel(item.iso);
+          const showMonthLabel = item.day === 1;
+          const monthLabel = formatDateLabel(item.iso);
+          const visibleTasks = tasksThisDay.slice(0, MAX_ITEMS);
+          const showOverflow = tasksThisDay.length > MAX_ITEMS;
 
           return (
             <div
               key={item.iso}
-              className={`group bg-white p-2 sm:p-2.5 lg:p-3 min-h-0 h-full flex flex-col transition-all duration-300 overflow-hidden relative text-left ${
-                item.inMonth ? '' : 'opacity-30'
+              className={`group min-h-0 h-full flex flex-col border-r border-b border-zinc-100 bg-white p-3 transition-colors ${
+                item.inMonth ? '' : 'bg-zinc-50/60 text-zinc-300'
               }`}
               onClick={() => onOpenDay?.(item.iso)}
-              title={label}
               role="button"
               tabIndex={0}
               onKeyDown={(event) => {
@@ -85,54 +106,67 @@ const CalendarView = ({
                 }
               }}
             >
-              <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                <div className="absolute inset-2 rounded-2xl border border-[#e6cfe1]/80 bg-[#f7f1f8]/30 shadow-sm"></div>
-              </div>
-
-              <div className="relative flex justify-between items-center mb-1.5 lg:mb-2 gap-3">
+              <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <span
-                    className={`text-[11px] sm:text-xs lg:text-sm font-black w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 flex items-center justify-center rounded-[12px] ${
+                    className={`text-xs font-black flex items-center justify-center ${
+                      showMonthLabel ? 'px-2 py-0.5 rounded-full' : 'w-7 h-7 rounded-full'
+                    } ${
                       isToday
-                        ? 'bg-[#8c397d] text-white shadow-xl shadow-[#8c397d]/40'
-                        : 'text-zinc-500'
+                        ? 'bg-[#4f6fff] text-white shadow-lg shadow-[#4f6fff]/30'
+                        : 'text-zinc-400'
                     }`}
                   >
-                    {item.day}
+                    {showMonthLabel ? monthLabel : item.day}
                   </span>
                   {(holiday || solar) && (
                     <span
                       className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
                         holiday ? 'bg-[#f7f1f8]' : 'bg-emerald-50'
                       }`}
-                      style={
-                        holiday ? { color: '#8c397d' } : { color: '#1c8d41' }
-                      }
+                      style={holiday ? { color: '#8c397d' } : { color: '#1c8d41' }}
                     >
                       {holiday || solar}
                     </span>
                   )}
                 </div>
-                <span className="text-[9px] font-bold text-zinc-300 uppercase tracking-widest group-hover:text-[#8c397d] transition-colors ml-2">
-                  {tasksThisDay.length}项
-                </span>
               </div>
 
-              <div className="space-y-1 relative flex-1 min-h-0 overflow-hidden">
-                {tasksThisDay.slice(0, MAX_ITEMS).map((task) => (
-                  <button
-                    key={task.id}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      onOpenTask?.(task);
-                    }}
-                    className="w-full text-left px-2 py-1 sm:px-2.5 bg-[#f7f1f8] border-l-[3px] border-[#8c397d]/80 rounded-lg text-[9px] sm:text-[10px] font-semibold text-[#6f2d63]/90 truncate tracking-tight hover:bg-[#eddde9] transition-colors active:scale-[0.99]"
-                  >
-                    {task.title}
-                  </button>
-                ))}
+              <div className="mt-2 space-y-1 overflow-hidden">
+                {visibleTasks.map((task) => {
+                  const color = colorPalette[getColorIndex(task.listId || task.id)];
+                  const timeLabel = task.time || task.timeLabel || '';
+                  return (
+                    <button
+                      key={task.id}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onToggleTask?.(task.id);
+                      }}
+                      className={`w-full h-5 flex items-center justify-between gap-2 px-2 rounded-md border text-[9px] font-semibold whitespace-nowrap overflow-hidden leading-[10px] transition-all duration-200 ${
+                        task.completed
+                          ? 'bg-white/70 border-zinc-200 text-zinc-300'
+                          : `${color.bg} ${color.text} ${color.border}`
+                      } ${pulseTaskId === task.id ? 'task-toggle-bounce' : ''}`}
+                    >
+                      <span className="flex items-center gap-1.5 min-w-0 flex-1">
+                        <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center text-[#8c397d]">
+                          {task.completed ? (
+                            <CheckCircle2 size={11} strokeWidth={2.6} />
+                          ) : (
+                            <Circle size={11} strokeWidth={2.6} />
+                          )}
+                        </span>
+                        <span className="truncate min-w-0">{task.title}</span>
+                      </span>
+                      {timeLabel && (
+                        <span className="text-[9px] font-bold opacity-60 whitespace-nowrap shrink-0">{timeLabel}</span>
+                      )}
+                    </button>
+                  );
+                })}
                 {showOverflow && (
-                  <div className="px-2.5 text-[10px] font-black text-zinc-300 tracking-[0.2em]">···</div>
+                  <div className="text-[10px] font-black text-zinc-300 tracking-[0.2em]">···</div>
                 )}
               </div>
             </div>

@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Maximize, Minimize, Pin, Plus, X } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import ListView from './components/ListView';
@@ -54,6 +54,8 @@ const App = () => {
   const [calendarDayISO, setCalendarDayISO] = useState(null);
   const [isMiniMode, setIsMiniMode] = useState(false);
   const [isMiniPinned, setIsMiniPinned] = useState(false);
+  const [pulseTaskId, setPulseTaskId] = useState(null);
+  const pulseTimerRef = useRef(null);
 
   const handleWindowMinimize = () => window.towdo?.minimizeWindow?.();
   const handleWindowToggleMaximize = () => window.towdo?.toggleMaximize?.();
@@ -139,6 +141,14 @@ const App = () => {
     return () => window.towdo.offOpenQuickAdd(handler);
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (pulseTimerRef.current) {
+        clearTimeout(pulseTimerRef.current);
+      }
+    };
+  }, []);
+
   // --- 视图逻辑 ---
   const smartViews = ['list', 'calendar', 'kanban', 'settings'];
   const todayISO = getTodayISO();
@@ -209,7 +219,7 @@ const App = () => {
   const urgentTasks = useMemo(() => {
     const priorityRank = { high: 0, medium: 1, low: 2 };
     return tasks
-      .filter((task) => !task.completed)
+      .filter((task) => task.date === todayISO && !task.completed)
       .sort((a, b) => {
         if (priorityRank[a.priority] !== priorityRank[b.priority]) {
           return priorityRank[a.priority] - priorityRank[b.priority];
@@ -259,6 +269,13 @@ const App = () => {
 
   // --- CRUD 逻辑 ---
   const handleToggleTask = (id) => {
+    if (pulseTimerRef.current) {
+      clearTimeout(pulseTimerRef.current);
+    }
+    setPulseTaskId(id);
+    pulseTimerRef.current = setTimeout(() => {
+      setPulseTaskId(null);
+    }, 320);
     setTasks((prev) =>
       prev.map((task) => {
         if (task.id !== id) return task;
@@ -559,6 +576,8 @@ const App = () => {
             tasks={tasks}
             onOpenTask={handleOpenTask}
             onOpenDay={(iso) => setCalendarDayISO(iso)}
+            onToggleTask={handleToggleTask}
+            pulseTaskId={pulseTaskId}
           />
         )}
 

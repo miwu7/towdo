@@ -45,7 +45,7 @@ export const buildMonthGrid = (monthDate) => {
   const year = monthDate.getFullYear();
   const month = monthDate.getMonth();
   const firstDay = new Date(year, month, 1);
-  const startWeekday = (firstDay.getDay() + 6) % 7; // 周一为 0
+  const startWeekday = firstDay.getDay(); // 周日为 0
   const startDate = new Date(year, month, 1 - startWeekday);
 
   return Array.from({ length: 42 }).map((_, i) => {
