@@ -6,7 +6,12 @@ contextBridge.exposeInMainWorld('towdo', {
   setAutoLaunch: (enabled) => ipcRenderer.send('twodo:set-auto-launch', !!enabled),
   setMinimizeToTray: (enabled) => ipcRenderer.send('twodo:set-minimize-to-tray', !!enabled),
   setGlobalHotkey: (enabled) => ipcRenderer.send('twodo:set-global-hotkey', !!enabled),
-  setWidgets: (enabled) => ipcRenderer.send('twodo:set-widgets', !!enabled),
+  setMiniMode: (enabled) => ipcRenderer.send('twodo:set-mini-mode', !!enabled),
+  setMiniPinned: (enabled) => ipcRenderer.send('twodo:set-mini-pinned', !!enabled),
+  setMiniWindowSize: (size) => ipcRenderer.send('twodo:set-mini-size', size),
+  minimizeWindow: () => ipcRenderer.send('twodo:window-minimize'),
+  toggleMaximize: () => ipcRenderer.send('twodo:window-toggle-maximize'),
+  closeWindow: () => ipcRenderer.send('twodo:window-close'),
   onOpenQuickAdd: (callback) => ipcRenderer.on('twodo:open-quick-add', callback),
   offOpenQuickAdd: (callback) => ipcRenderer.removeListener('twodo:open-quick-add', callback),
 });

@@ -61,7 +61,10 @@ const Sidebar = ({
 
   return (
     <aside className="w-60 lg:w-72 bg-white/90 backdrop-blur-3xl border-r border-[#eddde9] flex flex-col h-full z-10">
-      <div className="p-6 lg:p-10 flex items-center gap-3 lg:gap-4">
+      <div
+        className="p-6 lg:p-10 flex items-center gap-3 lg:gap-4"
+        style={{ WebkitAppRegion: 'drag' }}
+      >
         <div className="w-10 h-10 lg:w-12 lg:h-12 bg-[#8c397d] rounded-[14px] flex items-center justify-center shadow-2xl shadow-[#8c397d]/40 rotate-3">
           <CheckCircle2 className="text-white w-7 h-7" strokeWidth={3} />
         </div>
@@ -109,7 +112,7 @@ const Sidebar = ({
                 badge={tasks.filter((t) => t.listId === list.id && !t.completed).length}
                 isActive={activeTab === list.id}
                 onClick={onChangeTab}
-                onDelete={onDeleteList}
+                onDelete={list.locked ? null : onDeleteList}
               />
             ))}
           </nav>

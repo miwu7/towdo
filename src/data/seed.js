@@ -1,6 +1,7 @@
 ﻿import { addDaysISO } from '../utils/date';
 
 export const initialLists = [
+  { id: 'list_inbox', name: '未归档', locked: true, system: true },
   { id: 'list_1', name: '系统开发' },
   { id: 'list_2', name: '视觉设计' },
   { id: 'list_3', name: '个人生活' },

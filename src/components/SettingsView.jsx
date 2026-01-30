@@ -8,7 +8,6 @@ import {
   Filter,
   HardDrive,
   Keyboard,
-  Monitor,
   Power,
   Rocket,
   Search,
@@ -107,12 +106,6 @@ const SettingsView = ({ settings, onToggle, onExportData, onImportData }) => {
             title="原生通知"
             desc="使用系统通知中心提醒逾期任务"
             right={<Toggle checked={settings.nativeNotifications} onChange={() => onToggle('nativeNotifications')} />}
-          />
-          <SettingRow
-            icon={Monitor}
-            title="磁贴/小组件"
-            desc="在系统侧边栏显示今日进度百分比（需系统支持）"
-            right={<Toggle checked={settings.widgets} onChange={() => onToggle('widgets')} />}
           />
         </SettingsSection>
 

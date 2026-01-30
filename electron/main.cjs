@@ -3,11 +3,14 @@ const path = require('path');
 
 const isDev = !app.isPackaged;
 let mainWindow = null;
-let widgetWindow = null;
 let tray = null;
 let minimizeToTrayEnabled = false;
 let globalHotkeyEnabled = false;
-let widgetsEnabled = false;
+let miniModeEnabled = false;
+let miniRestoreBounds = null;
+let miniRestoreMinSize = null;
+let miniRestoreMaxSize = null;
+let miniRestoreResizable = null;
 
 const createTray = () => {
   if (tray) return tray;
@@ -63,9 +66,11 @@ const createMainWindow = () => {
     height: 820,
     minWidth: 1024,
     minHeight: 700,
-    backgroundColor: '#f7f1f8',
+    backgroundColor: '#00000000',
     show: false,
-    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
+    frame: false,
+    transparent: true,
+    titleBarStyle: process.platform === 'darwin' ? 'hidden' : 'default',
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
@@ -108,55 +113,32 @@ const createMainWindow = () => {
   return mainWindow;
 };
 
-const createWidgetWindow = () => {
-  if (widgetWindow) return widgetWindow;
-  widgetWindow = new BrowserWindow({
-    width: 320,
-    height: 180,
-    minWidth: 280,
-    minHeight: 160,
-    resizable: true,
-    alwaysOnTop: true,
-    skipTaskbar: true,
-    frame: false,
-    transparent: false,
-    backgroundColor: '#f7f1f8',
-    webPreferences: {
-      preload: path.join(__dirname, 'preload.cjs'),
-      contextIsolation: true,
-      nodeIntegration: false,
-      sandbox: true,
-    },
-  });
-
-  const rendererUrl = process.env.ELECTRON_RENDERER_URL;
-  if (rendererUrl) {
-    widgetWindow.loadURL(`${rendererUrl}?widget=1`);
+const setMiniMode = (enabled) => {
+  if (!mainWindow) return;
+  if (enabled) {
+    if (miniModeEnabled) return;
+    miniModeEnabled = true;
+    mainWindow.setBackgroundColor('#00000000');
+    miniRestoreBounds = mainWindow.getBounds();
+    miniRestoreMinSize = mainWindow.getMinimumSize();
+    miniRestoreMaxSize = mainWindow.getMaximumSize();
+    miniRestoreResizable = mainWindow.isResizable();
+    mainWindow.setMinimumSize(280, 200);
+    mainWindow.setMaximumSize(380, 1200);
+    mainWindow.setResizable(false);
+    mainWindow.setContentSize(340, 420, true);
   } else {
-    widgetWindow.loadFile(path.join(__dirname, '..', 'dist', 'index.html'), { query: { widget: '1' } });
-  }
-
-  widgetWindow.on('closed', () => {
-    widgetWindow = null;
-  });
-
-  if (process.platform === 'darwin') {
-    widgetWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-  }
-
-  return widgetWindow;
-};
-
-const setWidgetsEnabled = (enabled) => {
-  widgetsEnabled = !!enabled;
-  if (widgetsEnabled) {
-    const win = createWidgetWindow();
-    win.show();
-  } else if (widgetWindow) {
-    widgetWindow.close();
-    widgetWindow = null;
+    if (!miniModeEnabled) return;
+    miniModeEnabled = false;
+    if (miniRestoreBounds) mainWindow.setBounds(miniRestoreBounds);
+    if (miniRestoreMinSize) mainWindow.setMinimumSize(...miniRestoreMinSize);
+    if (miniRestoreMaxSize) mainWindow.setMaximumSize(...miniRestoreMaxSize);
+    if (typeof miniRestoreResizable === 'boolean') mainWindow.setResizable(miniRestoreResizable);
+    mainWindow.setAlwaysOnTop(false);
+    mainWindow.setBackgroundColor('#f7f1f8');
   }
 };
+
 
 ipcMain.on('twodo:set-auto-launch', (_event, enabled) => {
   app.setLoginItemSettings({ openAtLogin: !!enabled });
@@ -175,8 +157,40 @@ ipcMain.on('twodo:set-global-hotkey', (_event, enabled) => {
   registerGlobalHotkey();
 });
 
-ipcMain.on('twodo:set-widgets', (_event, enabled) => {
-  setWidgetsEnabled(enabled);
+ipcMain.on('twodo:set-mini-mode', (_event, enabled) => {
+  setMiniMode(enabled);
+});
+
+ipcMain.on('twodo:set-mini-pinned', (_event, enabled) => {
+  if (!mainWindow || !miniModeEnabled) return;
+  mainWindow.setAlwaysOnTop(!!enabled, 'screen-saver');
+});
+
+ipcMain.on('twodo:set-mini-size', (_event, size) => {
+  if (!mainWindow || !miniModeEnabled || !size) return;
+  const width = Math.max(260, Math.round(size.width || 0));
+  const height = Math.max(200, Math.round(size.height || 0));
+  if (!width || !height) return;
+  mainWindow.setContentSize(width, height, true);
+});
+
+ipcMain.on('twodo:window-minimize', () => {
+  if (!mainWindow) return;
+  mainWindow.minimize();
+});
+
+ipcMain.on('twodo:window-toggle-maximize', () => {
+  if (!mainWindow) return;
+  if (mainWindow.isMaximized()) {
+    mainWindow.unmaximize();
+  } else {
+    mainWindow.maximize();
+  }
+});
+
+ipcMain.on('twodo:window-close', () => {
+  if (!mainWindow) return;
+  mainWindow.close();
 });
 
 app.whenReady().then(() => {
