@@ -55,7 +55,7 @@
         { "target": "dmg", "arch": ["universal"] },
         { "target": "zip", "arch": ["universal"] }
       ],
-      "singleArchFiles": "LICENSE",
+      "singleArchFiles": "**/LICENSE*",
       "category": "public.app-category.productivity"
     },
     "win": {
