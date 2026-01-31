@@ -35,16 +35,16 @@ jobs:
         run: |
           $prefix = if ($env:OSS_PREFIX) { $env:OSS_PREFIX } else { "updates" }
           $dest = "oss://$($env:OSS_BUCKET)/$prefix/"
-          Get-ChildItem -Path dist -Filter *.exe | ForEach-Object { ./ossutil.exe cp -f $_.FullName $dest }
-          Get-ChildItem -Path dist -Filter *.blockmap | ForEach-Object { ./ossutil.exe cp -f $_.FullName $dest }
-          if (Test-Path dist/latest.yml) { ./ossutil.exe cp -f dist/latest.yml $dest }
+          Get-ChildItem -Path release -Filter *.exe | ForEach-Object { ./ossutil.exe cp -f $_.FullName $dest }
+          Get-ChildItem -Path release -Filter *.blockmap | ForEach-Object { ./ossutil.exe cp -f $_.FullName $dest }
+          if (Test-Path release/latest.yml) { ./ossutil.exe cp -f release/latest.yml $dest }
       - uses: actions/upload-artifact@v4
         with:
           name: windows-dist
           path: |
-            dist/*.exe
-            dist/*.blockmap
-            dist/latest.yml
+            release/*.exe
+            release/*.blockmap
+            release/latest.yml
 
   build-macos:
     runs-on: macos-latest
@@ -76,7 +76,7 @@ jobs:
         run: |
           PREFIX="${OSS_PREFIX:-updates}"
           DEST="oss://${OSS_BUCKET}/${PREFIX}/"
-          for f in dist/*.dmg dist/*.zip dist/*.blockmap dist/latest-mac.yml; do
+          for f in release/*.dmg release/*.zip release/*.blockmap release/latest-mac.yml; do
             if [ -f "$f" ]; then
               ./ossutil cp -f "$f" "$DEST"
             fi
@@ -85,5 +85,5 @@ jobs:
         with:
           name: macos-dist
           path: |
-            dist/*.dmg
-            dist/*.zip
+            release/*.dmg
+            release/*.zip
