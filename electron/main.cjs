@@ -1,16 +1,36 @@
-﻿const { app, BrowserWindow, shell, Tray, Menu, nativeImage, globalShortcut, ipcMain } = require('electron');
+﻿const { app, BrowserWindow, shell, Tray, Menu, nativeImage, ipcMain } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const path = require('path');
 
 const isDev = !app.isPackaged;
 let mainWindow = null;
 let tray = null;
 let minimizeToTrayEnabled = false;
-let globalHotkeyEnabled = false;
 let miniModeEnabled = false;
 let miniRestoreBounds = null;
 let miniRestoreMinSize = null;
 let miniRestoreMaxSize = null;
 let miniRestoreResizable = null;
+
+const sendUpdateEvent = (type, payload = null) => {
+  if (!mainWindow) return;
+  mainWindow.webContents.send('twodo:update-event', { type, payload });
+};
+
+const initAutoUpdater = () => {
+  if (isDev) return;
+  autoUpdater.autoDownload = false;
+  autoUpdater.autoInstallOnAppQuit = true;
+
+  autoUpdater.on('checking-for-update', () => sendUpdateEvent('checking'));
+  autoUpdater.on('update-available', (info) => sendUpdateEvent('available', info));
+  autoUpdater.on('update-not-available', (info) => sendUpdateEvent('none', info));
+  autoUpdater.on('error', (error) =>
+    sendUpdateEvent('error', { message: error?.message || String(error) })
+  );
+  autoUpdater.on('download-progress', (progress) => sendUpdateEvent('progress', progress));
+  autoUpdater.on('update-downloaded', (info) => sendUpdateEvent('downloaded', info));
+};
 
 const createTray = () => {
   if (tray) return tray;
@@ -48,17 +68,7 @@ const createTray = () => {
   return tray;
 };
 
-const registerGlobalHotkey = () => {
-  globalShortcut.unregisterAll();
-  if (!globalHotkeyEnabled) return;
-  globalShortcut.register('Alt+Space', () => {
-    if (!mainWindow) return;
-    if (mainWindow.isMinimized()) mainWindow.restore();
-    mainWindow.show();
-    mainWindow.focus();
-    mainWindow.webContents.send('twodo:open-quick-add');
-  });
-};
+
 
 const createMainWindow = () => {
   mainWindow = new BrowserWindow({
@@ -123,17 +133,17 @@ const setMiniMode = (enabled) => {
     miniRestoreMinSize = mainWindow.getMinimumSize();
     miniRestoreMaxSize = mainWindow.getMaximumSize();
     miniRestoreResizable = mainWindow.isResizable();
-    mainWindow.setMinimumSize(280, 200);
-    mainWindow.setMaximumSize(380, 1200);
-    mainWindow.setResizable(false);
+    mainWindow.setMinimumSize(280, 240);
+    mainWindow.setMaximumSize(520, 1200);
+    mainWindow.setResizable(true);
     mainWindow.setContentSize(340, 420, true);
   } else {
     if (!miniModeEnabled) return;
     miniModeEnabled = false;
-    if (miniRestoreBounds) mainWindow.setBounds(miniRestoreBounds);
     if (miniRestoreMinSize) mainWindow.setMinimumSize(...miniRestoreMinSize);
     if (miniRestoreMaxSize) mainWindow.setMaximumSize(...miniRestoreMaxSize);
     if (typeof miniRestoreResizable === 'boolean') mainWindow.setResizable(miniRestoreResizable);
+    if (miniRestoreBounds) mainWindow.setBounds(miniRestoreBounds);
     mainWindow.setAlwaysOnTop(false);
     mainWindow.setBackgroundColor('#f7f1f8');
   }
@@ -152,11 +162,6 @@ ipcMain.on('twodo:set-minimize-to-tray', (_event, enabled) => {
   }
 });
 
-ipcMain.on('twodo:set-global-hotkey', (_event, enabled) => {
-  globalHotkeyEnabled = !!enabled;
-  registerGlobalHotkey();
-});
-
 ipcMain.on('twodo:set-mini-mode', (_event, enabled) => {
   setMiniMode(enabled);
 });
@@ -173,6 +178,29 @@ ipcMain.on('twodo:set-mini-size', (_event, size) => {
   if (!width || !height) return;
   mainWindow.setContentSize(width, height, true);
 });
+ipcMain.on('twodo:check-update', async () => {
+  if (isDev) return;
+  try {
+    await autoUpdater.checkForUpdates();
+  } catch (error) {
+    sendUpdateEvent('error', { message: error?.message || String(error) });
+  }
+});
+
+ipcMain.on('twodo:download-update', async () => {
+  if (isDev) return;
+  try {
+    await autoUpdater.downloadUpdate();
+  } catch (error) {
+    sendUpdateEvent('error', { message: error?.message || String(error) });
+  }
+});
+
+ipcMain.on('twodo:install-update', () => {
+  if (isDev) return;
+  autoUpdater.quitAndInstall();
+});
+
 
 ipcMain.on('twodo:window-minimize', () => {
   if (!mainWindow) return;
@@ -195,7 +223,15 @@ ipcMain.on('twodo:window-close', () => {
 
 app.whenReady().then(() => {
   createMainWindow();
-  registerGlobalHotkey();
+  initAutoUpdater();
+
+  if (!isDev) {
+    setTimeout(() => {
+      autoUpdater.checkForUpdates().catch((error) => {
+        sendUpdateEvent('error', { message: error?.message || String(error) });
+      });
+    }, 1500);
+  }
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -210,6 +246,3 @@ app.on('window-all-closed', () => {
   }
 });
 
-app.on('will-quit', () => {
-  globalShortcut.unregisterAll();
-});

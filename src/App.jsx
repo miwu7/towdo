@@ -29,11 +29,8 @@ const DEFAULT_SETTINGS = {
   fontSmoothing: true,
   autoLaunch: false,
   minimizeToTray: false,
-  globalHotkey: false,
-  nativeNotifications: false,
   autoRollover: false,
   completionSound: true,
-  searchHotkey: true,
   quickAddHotkey: true,
   filterOverdueHotkey: true,
 };
@@ -56,10 +53,19 @@ const App = () => {
   const [isMiniPinned, setIsMiniPinned] = useState(false);
   const [pulseTaskId, setPulseTaskId] = useState(null);
   const pulseTimerRef = useRef(null);
+  const [updateState, setUpdateState] = useState({
+    status: 'idle',
+    info: null,
+    progress: null,
+    error: null,
+  });
 
   const handleWindowMinimize = () => window.towdo?.minimizeWindow?.();
   const handleWindowToggleMaximize = () => window.towdo?.toggleMaximize?.();
   const handleWindowClose = () => window.towdo?.closeWindow?.();
+  const handleCheckUpdate = () => window.towdo?.checkForUpdates?.();
+  const handleDownloadUpdate = () => window.towdo?.downloadUpdate?.();
+  const handleInstallUpdate = () => window.towdo?.installUpdate?.();
 
   const [tasks, setTasks] = useLocalStorage('towdo_tasks', initialTasks);
   const [customLists, setCustomLists] = useLocalStorage('towdo_lists', initialLists);
@@ -113,12 +119,28 @@ const App = () => {
     if (!window.towdo) return;
     window.towdo.setAutoLaunch(settings.autoLaunch);
     window.towdo.setMinimizeToTray(settings.minimizeToTray);
-    window.towdo.setGlobalHotkey(settings.globalHotkey);
-  }, [settings.autoLaunch, settings.minimizeToTray, settings.globalHotkey]);
+  }, [settings.autoLaunch, settings.minimizeToTray]);
 
   useEffect(() => {
     if (!window.towdo?.setMiniMode) return;
     window.towdo.setMiniMode(isMiniMode);
+    if (isMiniMode && window.towdo?.setMiniWindowSize) {
+      try {
+        const saved = localStorage.getItem('towdo_mini_size');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed?.width && parsed?.height) {
+            window.towdo.setMiniWindowSize(parsed);
+            return;
+          }
+        }
+        const fallback = { width: 440, height: 620 };
+        localStorage.setItem('towdo_mini_size', JSON.stringify(fallback));
+        window.towdo.setMiniWindowSize(fallback);
+      } catch (error) {
+        console.warn('读取迷你尺寸失败', error);
+      }
+    }
   }, [isMiniMode]);
 
   useEffect(() => {
@@ -131,21 +153,43 @@ const App = () => {
   }, [isMiniMode, isMiniPinned]);
 
   useEffect(() => {
-    if (!window.towdo) return undefined;
-    const handler = () => {
-      setShowQuickAdd(true);
-      setQuickAddStatus(null);
-      setQuickAddListId(null);
-    };
-    window.towdo.onOpenQuickAdd(handler);
-    return () => window.towdo.offOpenQuickAdd(handler);
-  }, []);
-
-  useEffect(() => {
     return () => {
       if (pulseTimerRef.current) {
         clearTimeout(pulseTimerRef.current);
       }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!window.towdo?.onUpdateEvent) return;
+    const off = window.towdo.onUpdateEvent((event) => {
+      if (!event?.type) return;
+      if (event.type === 'checking') {
+        setUpdateState({ status: 'checking', info: null, progress: null, error: null });
+        return;
+      }
+      if (event.type === 'available') {
+        setUpdateState({ status: 'available', info: event.payload || null, progress: null, error: null });
+        return;
+      }
+      if (event.type === 'none') {
+        setUpdateState({ status: 'none', info: event.payload || null, progress: null, error: null });
+        return;
+      }
+      if (event.type === 'progress') {
+        setUpdateState((prev) => ({ ...prev, status: 'progress', progress: event.payload || null }));
+        return;
+      }
+      if (event.type === 'downloaded') {
+        setUpdateState({ status: 'downloaded', info: event.payload || null, progress: null, error: null });
+        return;
+      }
+      if (event.type === 'error') {
+        setUpdateState({ status: 'error', info: null, progress: null, error: event.payload?.message || '更新失败' });
+      }
+    });
+    return () => {
+      if (typeof off === 'function') off();
     };
   }, []);
 
@@ -216,18 +260,22 @@ const App = () => {
     };
   }, [calendarDayISO]);
 
-  const urgentTasks = useMemo(() => {
+  const miniSections = useMemo(() => {
     const priorityRank = { high: 0, medium: 1, low: 2 };
-    return tasks
-      .filter((task) => task.date === todayISO && !task.completed)
-      .sort((a, b) => {
+    const sortByPriority = (items) =>
+      [...items].sort((a, b) => {
         if (priorityRank[a.priority] !== priorityRank[b.priority]) {
           return priorityRank[a.priority] - priorityRank[b.priority];
         }
-        return a.date.localeCompare(b.date);
-      })
-      .slice(0, 5);
-  }, [tasks]);
+        return a.title.localeCompare(b.title);
+      });
+
+    return {
+      todayTodo: sortByPriority(tasks.filter((task) => task.date === todayISO && !task.completed)),
+      todayDone: sortByPriority(tasks.filter((task) => task.date === todayISO && task.completed)),
+      overdueTodo: sortByPriority(tasks.filter((task) => task.date < todayISO && !task.completed)),
+    };
+  }, [tasks, todayISO]);
 
   // --- 自动延期 ---
   useEffect(() => {
@@ -392,11 +440,6 @@ const App = () => {
       const isInput = ['INPUT', 'TEXTAREA'].includes(event.target.tagName);
       if (isInput) return;
 
-      if (settings.searchHotkey && (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
-        event.preventDefault();
-        setActiveTab('list');
-      }
-
       if (settings.quickAddHotkey && event.key.toLowerCase() === 'n') {
         event.preventDefault();
         openQuickAdd();
@@ -409,29 +452,7 @@ const App = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [settings.searchHotkey, settings.quickAddHotkey, settings.filterOverdueHotkey, activeListId]);
-
-  // --- 原生通知 ---
-  useEffect(() => {
-    if (!settings.nativeNotifications) return;
-    if (!('Notification' in window)) return;
-
-    const notify = async () => {
-      if (Notification.permission === 'default') {
-        await Notification.requestPermission();
-      }
-      if (Notification.permission !== 'granted') return;
-
-      const overdue = tasks.filter((task) => task.date < todayISO && !task.completed);
-      if (overdue.length === 0) return;
-
-      new Notification('TwoDo 逾期提醒', {
-        body: `你有 ${overdue.length} 个逾期任务需要处理。`,
-      });
-    };
-
-    notify();
-  }, [settings.nativeNotifications, tasks, todayISO]);
+  }, [settings.quickAddHotkey, settings.filterOverdueHotkey, activeListId]);
 
   // --- 设置操作 ---
   const handleToggleSetting = (key) => {
@@ -474,9 +495,11 @@ const App = () => {
 
   if (isMiniMode) {
     return (
-      <div className="w-full h-full min-h-0 min-w-0 bg-transparent flex items-start justify-start">
+      <div className="app-drag w-full h-full min-h-0 min-w-0 bg-transparent flex items-start justify-start">
         <MiniModeView
-          tasks={urgentTasks}
+          todayTodo={miniSections.todayTodo}
+          todayDone={miniSections.todayDone}
+          overdueTodo={miniSections.overdueTodo}
           lists={customLists}
           dateISO={todayISO}
           isPinned={isMiniPinned}
@@ -490,7 +513,7 @@ const App = () => {
   }
 
   return (
-    <div className={`flex h-full w-full min-h-[700px] min-w-[1024px] bg-[#f7f1f8] text-zinc-900 selection:bg-[#eddde9] ${
+    <div className={`app-drag flex h-full w-full min-h-[700px] min-w-[1024px] bg-[#f7f1f8] text-zinc-900 selection:bg-[#eddde9] ${
       settings.highContrast ? 'contrast-high' : ''
     }`}>
       <Sidebar
@@ -587,6 +610,10 @@ const App = () => {
             onToggle={handleToggleSetting}
             onExportData={handleExportData}
             onImportData={handleImportData}
+            updateState={updateState}
+            onCheckUpdate={handleCheckUpdate}
+            onDownloadUpdate={handleDownloadUpdate}
+            onInstallUpdate={handleInstallUpdate}
           />
         )}
 

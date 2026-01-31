@@ -11,6 +11,14 @@ const TaskCard = ({ task, listName, onToggle, onOpen }) => (
         : 'border-zinc-50 hover:border-[#8c397d]/20 shadow-sm hover:shadow-2xl hover:shadow-[#8c397d]/5'
     }`}
     onClick={() => onOpen(task)}
+    role="button"
+    tabIndex={0}
+    onKeyDown={(event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        onOpen(task);
+      }
+    }}
   >
     <button
       onClick={(event) => {

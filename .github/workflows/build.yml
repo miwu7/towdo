@@ -1,0 +1,89 @@
+name: Build Desktop Apps
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    env:
+      OSS_ENDPOINT: ${{ secrets.OSS_ENDPOINT }}
+      OSS_ACCESS_KEY_ID: ${{ secrets.OSS_ACCESS_KEY_ID }}
+      OSS_ACCESS_KEY_SECRET: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
+      OSS_BUCKET: ${{ secrets.OSS_BUCKET }}
+      OSS_PREFIX: ${{ secrets.OSS_PREFIX }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run dist -- --publish=never
+      - name: Install ossutil
+        run: |
+          Invoke-WebRequest -Uri https://gosspublic.alicdn.com/ossutil/1.7.16/ossutil64.exe -OutFile ossutil.exe
+      - name: Configure OSS
+        run: |
+          $prefix = if ($env:OSS_PREFIX) { $env:OSS_PREFIX } else { "updates" }
+          ./ossutil.exe config -e $env:OSS_ENDPOINT -i $env:OSS_ACCESS_KEY_ID -k $env:OSS_ACCESS_KEY_SECRET -L EN
+          Write-Host "Using OSS prefix: $prefix"
+      - name: Upload to OSS
+        run: |
+          $prefix = if ($env:OSS_PREFIX) { $env:OSS_PREFIX } else { "updates" }
+          $dest = "oss://$($env:OSS_BUCKET)/$prefix/"
+          Get-ChildItem -Path dist -Filter *.exe | ForEach-Object { ./ossutil.exe cp -f $_.FullName $dest }
+          Get-ChildItem -Path dist -Filter *.blockmap | ForEach-Object { ./ossutil.exe cp -f $_.FullName $dest }
+          if (Test-Path dist/latest.yml) { ./ossutil.exe cp -f dist/latest.yml $dest }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-dist
+          path: |
+            dist/*.exe
+            dist/*.blockmap
+            dist/latest.yml
+
+  build-macos:
+    runs-on: macos-latest
+    env:
+      OSS_ENDPOINT: ${{ secrets.OSS_ENDPOINT }}
+      OSS_ACCESS_KEY_ID: ${{ secrets.OSS_ACCESS_KEY_ID }}
+      OSS_ACCESS_KEY_SECRET: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
+      OSS_BUCKET: ${{ secrets.OSS_BUCKET }}
+      OSS_PREFIX: ${{ secrets.OSS_PREFIX }}
+      CSC_IDENTITY_AUTO_DISCOVERY: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run dist -- --publish=never
+      - name: Install ossutil
+        run: |
+          curl -L https://gosspublic.alicdn.com/ossutil/1.7.16/ossutilmac64 -o ossutil
+          chmod +x ossutil
+      - name: Configure OSS
+        run: |
+          PREFIX="${OSS_PREFIX:-updates}"
+          ./ossutil config -e "${OSS_ENDPOINT}" -i "${OSS_ACCESS_KEY_ID}" -k "${OSS_ACCESS_KEY_SECRET}" -L EN
+          echo "Using OSS prefix: ${PREFIX}"
+      - name: Upload to OSS
+        run: |
+          PREFIX="${OSS_PREFIX:-updates}"
+          DEST="oss://${OSS_BUCKET}/${PREFIX}/"
+          for f in dist/*.dmg dist/*.zip dist/*.blockmap dist/latest-mac.yml; do
+            if [ -f "$f" ]; then
+              ./ossutil cp -f "$f" "$DEST"
+            fi
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-dist
+          path: |
+            dist/*.dmg
+            dist/*.zip

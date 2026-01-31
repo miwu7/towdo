@@ -6,6 +6,14 @@ const KanbanCard = ({ task, onOpen, onDragStart }) => (
   <div
     className="group bg-white p-4 lg:p-6 rounded-[22px] border border-zinc-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer"
     onClick={() => onOpen(task)}
+    role="button"
+    tabIndex={0}
+    onKeyDown={(event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        onOpen(task);
+      }
+    }}
     draggable
     onDragStart={(event) => onDragStart(event, task)}
   >

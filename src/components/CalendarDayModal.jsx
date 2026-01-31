@@ -19,7 +19,7 @@ const CalendarDayModal = ({ isOpen, dateISO, holiday, solar, tasks, lists, onClo
 
   return (
     <div
-      className="fixed inset-0 z-[70] flex items-center justify-center bg-zinc-900/60 backdrop-blur-md animate-in fade-in duration-300"
+      className="app-no-drag fixed inset-0 z-[70] flex items-center justify-center bg-zinc-900/60 backdrop-blur-md animate-in fade-in duration-300"
       onClick={onClose}
     >
       <div

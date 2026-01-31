@@ -46,3 +46,19 @@ body.contrast-high {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+.app-drag {
+  -webkit-app-region: drag;
+}
+
+.app-drag .app-no-drag,
+.app-drag button,
+.app-drag input,
+.app-drag textarea,
+.app-drag select,
+.app-drag a,
+.app-drag [role='button'],
+.app-drag [draggable='true'],
+.app-drag [contenteditable='true'] {
+  -webkit-app-region: no-drag;
+}

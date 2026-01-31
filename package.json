@@ -14,6 +14,7 @@
     "dist": "vite build && electron-builder"
   },
   "dependencies": {
+    "electron-updater": "^6.3.9",
     "lucide-react": "^0.484.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
@@ -40,17 +41,32 @@
     "directories": {
       "buildResources": "assets"
     },
+    "publish": [
+      {
+        "provider": "generic",
+        "url": "https://towdo.oss-cn-hangzhou.aliyuncs.com/updates"
+      }
+    ],
     "extraMetadata": {
       "main": "electron/main.cjs"
     },
     "mac": {
-      "target": ["dmg", "zip"],
+      "target": [
+        "dmg",
+        "zip"
+      ],
       "category": "public.app-category.productivity"
     },
     "win": {
-      "target": ["nsis", "zip"],
+      "target": [
+        "nsis",
+        "zip"
+      ],
       "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
     }
   }
 }
-

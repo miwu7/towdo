@@ -41,7 +41,7 @@ const QuickAddModal = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] bg-[#4a1a43]/20 backdrop-blur-xl animate-in fade-in duration-500"
+      className="app-no-drag fixed inset-0 z-50 flex items-start justify-center pt-[15vh] bg-[#4a1a43]/20 backdrop-blur-xl animate-in fade-in duration-500"
       onClick={onClose}
     >
       <div

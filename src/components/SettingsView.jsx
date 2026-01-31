@@ -1,6 +1,5 @@
 ﻿import React, { useRef } from 'react';
 import {
-  Bell,
   Contrast,
   Cpu,
   Download,
@@ -9,8 +8,7 @@ import {
   HardDrive,
   Keyboard,
   Power,
-  Rocket,
-  Search,
+  RefreshCw,
   Settings2,
   Volume2,
   Upload,
@@ -54,11 +52,40 @@ const SettingRow = ({ icon: Icon, title, desc, action, right }) => (
   </div>
 );
 
-const SettingsView = ({ settings, onToggle, onExportData, onImportData }) => {
+const SettingsView = ({
+  settings,
+  onToggle,
+  onExportData,
+  onImportData,
+  updateState,
+  onCheckUpdate,
+  onDownloadUpdate,
+  onInstallUpdate,
+}) => {
   const fileRef = useRef(null);
+  const progress = updateState?.progress?.percent;
+  const statusText = (() => {
+    if (!updateState) return '手动检查更新';
+    switch (updateState.status) {
+      case 'checking':
+        return '正在检查更新...';
+      case 'available':
+        return `发现新版本 ${updateState.info?.version || ''}`.trim();
+      case 'none':
+        return '已是最新版本';
+      case 'progress':
+        return `下载中 ${progress ? Math.round(progress) : 0}%`;
+      case 'downloaded':
+        return '下载完成，点击安装';
+      case 'error':
+        return updateState.error || '更新失败';
+      default:
+        return '手动检查更新';
+    }
+  })();
 
   return (
-    <div className="flex-1 overflow-y-auto no-scrollbar animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="app-no-drag flex-1 overflow-y-auto no-scrollbar animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="max-w-5xl w-full mx-auto py-16 md:py-24 px-6 md:px-12">
         <header className="mb-16">
           <p className="text-[10px] uppercase tracking-[0.4em] font-black text-[#8c397d]">TwoDo Settings</p>
@@ -95,18 +122,6 @@ const SettingsView = ({ settings, onToggle, onExportData, onImportData }) => {
             desc="点击关闭按钮时隐藏到系统托盘，保持后台运行"
             right={<Toggle checked={settings.minimizeToTray} onChange={() => onToggle('minimizeToTray')} />}
           />
-          <SettingRow
-            icon={Rocket}
-            title="全局快捷键"
-            desc="Alt + Space 呼出快速添加任务（需系统权限）"
-            right={<Toggle checked={settings.globalHotkey} onChange={() => onToggle('globalHotkey')} />}
-          />
-          <SettingRow
-            icon={Bell}
-            title="原生通知"
-            desc="使用系统通知中心提醒逾期任务"
-            right={<Toggle checked={settings.nativeNotifications} onChange={() => onToggle('nativeNotifications')} />}
-          />
         </SettingsSection>
 
         <SettingsSection title="任务逻辑">
@@ -126,12 +141,6 @@ const SettingsView = ({ settings, onToggle, onExportData, onImportData }) => {
 
         <SettingsSection title="快捷操作">
           <SettingRow
-            icon={Search}
-            title="全局搜索"
-            desc="Cmd + K"
-            right={<Toggle checked={settings.searchHotkey} onChange={() => onToggle('searchHotkey')} />}
-          />
-          <SettingRow
             icon={Keyboard}
             title="快速新建"
             desc="N"
@@ -142,6 +151,40 @@ const SettingsView = ({ settings, onToggle, onExportData, onImportData }) => {
             title="过滤逾期"
             desc="Alt + O"
             right={<Toggle checked={settings.filterOverdueHotkey} onChange={() => onToggle('filterOverdueHotkey')} />}
+          />
+        </SettingsSection>
+
+        <SettingsSection title="版本更新">
+          <SettingRow
+            icon={RefreshCw}
+            title="检查更新"
+            desc={statusText}
+            action={
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  onClick={onCheckUpdate}
+                  className="px-4 py-2 rounded-xl bg-zinc-900 text-white text-xs font-black uppercase tracking-widest hover:opacity-90 active:scale-95"
+                >
+                  检查更新
+                </button>
+                {updateState?.status === 'available' && (
+                  <button
+                    onClick={onDownloadUpdate}
+                    className="px-4 py-2 rounded-xl bg-[#8c397d] text-white text-xs font-black uppercase tracking-widest hover:opacity-90 active:scale-95"
+                  >
+                    下载更新
+                  </button>
+                )}
+                {updateState?.status === 'downloaded' && (
+                  <button
+                    onClick={onInstallUpdate}
+                    className="px-4 py-2 rounded-xl bg-[#8c397d] text-white text-xs font-black uppercase tracking-widest hover:opacity-90 active:scale-95"
+                  >
+                    立即安装
+                  </button>
+                )}
+              </div>
+            }
           />
         </SettingsSection>
 
