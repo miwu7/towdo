@@ -1,6 +1,6 @@
 {
   "name": "towdo-desktop",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "TowDo desktop app built with React + Electron + Tailwind CSS.",
   "main": "electron/main.cjs",
@@ -53,8 +53,18 @@
     },
     "mac": {
       "target": [
-        { "target": "dmg", "arch": ["universal"] },
-        { "target": "zip", "arch": ["universal"] }
+        {
+          "target": "dmg",
+          "arch": [
+            "universal"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "universal"
+          ]
+        }
       ],
       "singleArchFiles": "**/LICENSE*",
       "category": "public.app-category.productivity"
