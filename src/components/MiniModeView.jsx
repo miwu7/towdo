@@ -142,7 +142,12 @@ const MiniModeView = ({
         )}
         <button
           type="button"
-          onClick={() => onToggleTask?.(task.id)}
+          onClick={() => {
+            onToggleTask?.(task.id);
+            if (!task.completed && task.date === dateISO) {
+              setShowDone(true);
+            }
+          }}
           className={`relative flex h-8 w-8 items-center justify-center rounded-full border-2 bg-white shadow-[0_6px_12px_rgba(140,57,125,0.12)] ring-2 transition-all duration-200 active:scale-95 ${tone.ring}`}
         >
           {task.completed ? (

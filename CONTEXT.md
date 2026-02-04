@@ -66,6 +66,13 @@
 - build：`npm run build`
 - dist：`npm run dist`
 
+## 版本发布（GitHub Actions + OSS）
+> workflow 仅在 push tag `v*` 或手动触发时执行（见 `.github/workflows/build.yml`）。
+- 示例（建议）：升版本 + 推送 + tag 触发
+  - `npm version 0.1.3`
+  - `git push origin main`
+  - `git push origin v0.1.3`
+
 ## 最近修改偏好
 - “今日焦点”已更名为“今日待办”。
 - 删除左下角“桌面专业版”。
