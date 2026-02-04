@@ -13,6 +13,7 @@ const CalendarView = ({
   onOpenDay,
   onToggleTask,
   pulseTaskId,
+  isCompact = false,
 }) => {
   const days = buildMonthGrid(monthDate);
   const todayISO = getTodayISO();
@@ -40,12 +41,20 @@ const CalendarView = ({
 
   return (
     <div className="flex-1 min-h-0 flex flex-col h-full overflow-hidden animate-in fade-in slide-in-from-right-8 duration-700">
-      <header className="px-6 lg:px-10 py-6 lg:py-8 flex justify-between items-center border-b border-zinc-100 bg-white">
+      <header
+        className={`flex justify-between items-center border-b border-zinc-100 bg-white ${
+          isCompact ? 'px-5 lg:px-6 py-4 lg:py-5' : 'px-6 lg:px-8 py-5 lg:py-6'
+        }`}
+      >
         <div className="flex items-center gap-6 xl:gap-8">
-          <h2 className="text-3xl lg:text-4xl xl:text-5xl font-[900] tracking-[-0.06em] text-zinc-900">
+          <h2
+            className={`font-[900] tracking-[-0.04em] text-zinc-900 ${
+              isCompact ? 'text-xl lg:text-2xl xl:text-3xl' : 'text-2xl lg:text-3xl xl:text-4xl'
+            }`}
+          >
             {formatMonthLabel(monthDate)}
           </h2>
-          <div className="flex bg-zinc-100 p-1.5 rounded-[20px]">
+          <div className={`flex bg-zinc-100 p-1.5 ${isCompact ? 'rounded-[16px]' : 'rounded-[20px]'}`}>
             <button
               className="p-2.5 hover:bg-white rounded-xl shadow-sm transition-all active:scale-95"
               onClick={onPrevMonth}
@@ -53,7 +62,9 @@ const CalendarView = ({
               <ChevronLeft size={18} strokeWidth={3} />
             </button>
             <button
-              className="px-6 py-1 text-xs font-[900] uppercase tracking-widest text-zinc-500 hover:text-[#8c397d] transition-colors active:scale-95"
+              className={`uppercase text-zinc-500 hover:text-[#8c397d] transition-colors active:scale-95 ${
+                isCompact ? 'px-4 py-1 text-[9px] font-semibold tracking-[0.22em]' : 'px-5 py-1 text-[10px] font-[900] tracking-[0.25em]'
+              }`}
               onClick={onResetToday}
             >
               Today
@@ -72,7 +83,9 @@ const CalendarView = ({
         {weekLabels.map((day) => (
           <div
             key={day}
-            className="py-2 text-[12px] font-black tracking-[0.2em] text-zinc-400 text-center"
+            className={`text-zinc-400 text-center ${
+              isCompact ? 'py-1.5 text-[10px] font-medium tracking-[0.16em]' : 'py-2 text-[11px] font-semibold tracking-[0.18em]'
+            }`}
           >
             {day}
           </div>
@@ -93,9 +106,9 @@ const CalendarView = ({
           return (
             <div
               key={item.iso}
-              className={`group min-h-0 h-full flex flex-col border-r border-b border-zinc-100 bg-white p-3 transition-colors ${
-                item.inMonth ? '' : 'bg-zinc-50/60 text-zinc-300'
-              }`}
+              className={`group min-h-0 h-full flex flex-col border-r border-b border-zinc-100 bg-white transition-colors ${
+                isCompact ? 'p-2.5' : 'p-3'
+              } ${item.inMonth ? '' : 'bg-zinc-50/60 text-zinc-300'}`}
               onClick={() => onOpenDay?.(item.iso)}
               role="button"
               tabIndex={0}
@@ -109,9 +122,9 @@ const CalendarView = ({
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <span
-                    className={`text-xs font-black flex items-center justify-center ${
-                      showMonthLabel ? 'px-2 py-0.5 rounded-full' : 'w-7 h-7 rounded-full'
-                    } ${
+                    className={`flex items-center justify-center ${
+                      isCompact ? 'text-[10px] font-medium' : 'text-[11px] font-semibold'
+                    } ${showMonthLabel ? 'px-2 py-0.5 rounded-full' : 'w-7 h-7 rounded-full'} ${
                       isToday
                         ? 'bg-[#4f6fff] text-white shadow-lg shadow-[#4f6fff]/30'
                         : 'text-zinc-400'
@@ -121,9 +134,9 @@ const CalendarView = ({
                   </span>
                   {(holiday || solar) && (
                     <span
-                      className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
-                        holiday ? 'bg-[#f7f1f8]' : 'bg-emerald-50'
-                      }`}
+                      className={`px-2 py-0.5 rounded-full ${
+                        isCompact ? 'text-[8px] font-medium' : 'text-[9px] font-semibold'
+                      } ${holiday ? 'bg-[#f7f1f8]' : 'bg-emerald-50'}`}
                       style={holiday ? { color: '#8c397d' } : { color: '#1c8d41' }}
                     >
                       {holiday || solar}
@@ -132,7 +145,7 @@ const CalendarView = ({
                 </div>
               </div>
 
-              <div className="mt-2 space-y-1 overflow-hidden">
+              <div className={`mt-2 overflow-hidden ${isCompact ? 'space-y-0.5' : 'space-y-1'}`}>
                 {visibleTasks.map((task) => {
                   const color = colorPalette[getColorIndex(task.listId || task.id)];
                   const timeLabel = task.time || task.timeLabel || '';
@@ -143,7 +156,9 @@ const CalendarView = ({
                         event.stopPropagation();
                         onToggleTask?.(task.id);
                       }}
-                      className={`w-full h-5 flex items-center justify-between gap-2 px-2 rounded-md border text-[9px] font-semibold whitespace-nowrap overflow-hidden leading-[10px] transition-all duration-200 ${
+                      className={`w-full h-5 flex items-center justify-between gap-2 px-2 rounded-md border whitespace-nowrap overflow-hidden leading-[10px] transition-all duration-200 ${
+                        isCompact ? 'text-[8px] font-medium' : 'text-[9px] font-semibold'
+                      } ${
                         task.completed
                           ? 'bg-white/70 border-zinc-200 text-zinc-300'
                           : `${color.bg} ${color.text} ${color.border}`

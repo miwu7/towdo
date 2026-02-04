@@ -72,8 +72,8 @@ const createTray = () => {
 
 const createMainWindow = () => {
   mainWindow = new BrowserWindow({
-    width: 1280,
-    height: 820,
+    width: 1024,
+    height: 700,
     minWidth: 1024,
     minHeight: 700,
     backgroundColor: '#00000000',

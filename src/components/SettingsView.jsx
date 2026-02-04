@@ -7,6 +7,7 @@ import {
   Filter,
   HardDrive,
   Keyboard,
+  Layout,
   Power,
   RefreshCw,
   Settings2,
@@ -30,21 +31,21 @@ const Toggle = ({ checked, onChange }) => (
 );
 
 const SettingsSection = ({ title, children }) => (
-  <section className="mb-14">
-    <h2 className="text-4xl lg:text-5xl font-[900] tracking-[-0.04em] text-zinc-900 mb-8">{title}</h2>
-    <div className="space-y-5">{children}</div>
+  <section className="mb-10">
+    <h2 className="text-2xl lg:text-3xl font-[900] tracking-[-0.03em] text-zinc-900 mb-6">{title}</h2>
+    <div className="space-y-4">{children}</div>
   </section>
 );
 
 const SettingRow = ({ icon: Icon, title, desc, action, right }) => (
-  <div className="flex items-center justify-between gap-6 p-6 rounded-[28px] bg-white border border-zinc-100 shadow-sm hover:shadow-xl transition-all">
+  <div className="flex items-center justify-between gap-6 p-5 rounded-[24px] bg-white border border-zinc-100 shadow-sm hover:shadow-lg transition-all">
     <div className="flex items-start gap-4">
-      <div className="w-12 h-12 rounded-2xl bg-[#f7f1f8] text-[#8c397d] flex items-center justify-center">
-        <Icon size={20} />
+      <div className="w-10 h-10 rounded-2xl bg-[#f7f1f8] text-[#8c397d] flex items-center justify-center">
+        <Icon size={18} />
       </div>
       <div>
-        <h3 className="text-lg font-black text-zinc-900">{title}</h3>
-        {desc && <p className="text-sm text-zinc-500 mt-2 leading-relaxed">{desc}</p>}
+        <h3 className="text-base font-semibold text-zinc-900">{title}</h3>
+        {desc && <p className="text-[13px] text-zinc-500 mt-2 leading-relaxed">{desc}</p>}
         {action && <div className="mt-3">{action}</div>}
       </div>
     </div>
@@ -86,10 +87,10 @@ const SettingsView = ({
 
   return (
     <div className="app-no-drag flex-1 overflow-y-auto no-scrollbar animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="max-w-5xl w-full mx-auto py-16 md:py-24 px-6 md:px-12">
-        <header className="mb-16">
-          <p className="text-[10px] uppercase tracking-[0.4em] font-black text-[#8c397d]">TwoDo Settings</p>
-          <h1 className="text-5xl md:text-7xl font-[900] tracking-[-0.06em] text-zinc-900 mt-4">
+      <div className="max-w-5xl w-full mx-auto py-12 md:py-16 px-6 md:px-10">
+        <header className="mb-10">
+          <p className="text-[9px] uppercase tracking-[0.35em] font-semibold text-[#8c397d]">TwoDo Settings</p>
+          <h1 className="text-3xl md:text-4xl font-[900] tracking-[-0.04em] text-zinc-900 mt-3">
             功能设置
           </h1>
         </header>
@@ -100,6 +101,12 @@ const SettingsView = ({
             title="对比度"
             desc="标准 / 高对比度（针对视障或强光环境）"
             right={<Toggle checked={settings.highContrast} onChange={() => onToggle('highContrast')} />}
+          />
+          <SettingRow
+            icon={Layout}
+            title="紧凑模式"
+            desc="缩小字号与留白，更接近 TickTick 的密度"
+            right={<Toggle checked={settings.compactMode} onChange={() => onToggle('compactMode')} />}
           />
           <SettingRow
             icon={Cpu}

@@ -33,6 +33,7 @@ const DEFAULT_SETTINGS = {
   completionSound: true,
   quickAddHotkey: true,
   filterOverdueHotkey: true,
+  compactMode: false,
 };
 
 const App = () => {
@@ -43,6 +44,7 @@ const App = () => {
   const [selectedTask, setSelectedTask] = useState(null);
   const [quickAddStatus, setQuickAddStatus] = useState(null);
   const [quickAddListId, setQuickAddListId] = useState(null);
+  const [quickAddDate, setQuickAddDate] = useState(null);
   const [includeOverdue, setIncludeOverdue] = useState(true);
   const [calendarMonth, setCalendarMonth] = useState(() => {
     const now = new Date();
@@ -105,7 +107,8 @@ const App = () => {
   useEffect(() => {
     document.body.classList.toggle('contrast-high', settings.highContrast);
     document.body.style.webkitFontSmoothing = settings.fontSmoothing ? 'antialiased' : 'auto';
-  }, [settings.highContrast, settings.fontSmoothing]);
+    document.body.classList.toggle('compact-mode', settings.compactMode);
+  }, [settings.highContrast, settings.fontSmoothing, settings.compactMode]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -356,14 +359,15 @@ const App = () => {
     if (activeTab === id) setActiveTab('list');
   };
 
-  const handleAddTask = (title, listId) => {
+  const handleAddTask = (title, listId, dateOverride = null) => {
     if (!title.trim()) return;
     const resolvedListId = listId || activeListId || UNASSIGNED_LIST_ID;
     const status = quickAddStatus || 'todo';
+    const resolvedDate = dateOverride || quickAddDate || todayISO;
     const newTask = {
       id: Date.now(),
       title: title.trim(),
-      date: todayISO,
+      date: resolvedDate,
       priority: 'medium',
       completed: status === 'done',
       listId: resolvedListId,
@@ -374,6 +378,7 @@ const App = () => {
     setShowQuickAdd(false);
     setQuickAddStatus(null);
     setQuickAddListId(null);
+    setQuickAddDate(null);
   };
 
   const handleUpdateTask = (updatedTask) => {
@@ -422,9 +427,10 @@ const App = () => {
     setCalendarMonth(new Date(now.getFullYear(), now.getMonth(), 1));
   };
 
-  const openQuickAdd = (status = null, listId = null) => {
+  const openQuickAdd = (status = null, listId = null, dateISO = null) => {
     setQuickAddStatus(status);
     setQuickAddListId(listId || activeListId);
+    setQuickAddDate(dateISO || null);
     setShowQuickAdd(true);
   };
 
@@ -432,6 +438,7 @@ const App = () => {
     setShowQuickAdd(false);
     setQuickAddStatus(null);
     setQuickAddListId(null);
+    setQuickAddDate(null);
   };
 
   // --- 快捷键 ---
@@ -523,6 +530,7 @@ const App = () => {
         lists={customLists}
         tasks={tasks}
         onDeleteList={handleDeleteList}
+        isCompact={settings.compactMode}
       />
 
       <main className="flex-1 min-w-0 min-h-0 flex flex-col relative bg-white group">
@@ -578,6 +586,7 @@ const App = () => {
             showOverdueToggle={activeTab === 'list'}
             includeOverdue={includeOverdue}
             onToggleOverdue={() => setIncludeOverdue((prev) => !prev)}
+            isCompact={settings.compactMode}
           />
         )}
 
@@ -587,6 +596,7 @@ const App = () => {
             onOpenTask={handleOpenTask}
             onAddTask={(status) => openQuickAdd(status, activeListId)}
             onMoveTask={handleMoveTask}
+            isCompact={settings.compactMode}
           />
         )}
 
@@ -601,6 +611,7 @@ const App = () => {
             onOpenDay={(iso) => setCalendarDayISO(iso)}
             onToggleTask={handleToggleTask}
             pulseTaskId={pulseTaskId}
+            isCompact={settings.compactMode}
           />
         )}
 
@@ -619,9 +630,9 @@ const App = () => {
 
         <button
           onClick={() => openQuickAdd(null, activeListId)}
-          className="absolute bottom-8 right-8 md:bottom-12 md:right-12 w-16 h-16 md:w-20 md:h-20 bg-[#8c397d] text-white rounded-[28px] shadow-[0_25px_50px_-12px_rgba(140,57,125,0.5)] flex items-center justify-center hover:scale-110 active:scale-90 transition-all z-20"
+          className="absolute bottom-7 right-7 md:bottom-10 md:right-10 w-14 h-14 md:w-16 md:h-16 bg-[#8c397d] text-white rounded-[22px] shadow-[0_20px_40px_-12px_rgba(140,57,125,0.45)] flex items-center justify-center hover:scale-105 active:scale-95 transition-all z-20"
         >
-          <Plus size={28} strokeWidth={4} />
+          <Plus size={22} strokeWidth={3.6} />
         </button>
       </main>
 
@@ -634,6 +645,9 @@ const App = () => {
         lists={customLists}
         onClose={() => setCalendarDayISO(null)}
         onOpenTask={handleOpenTask}
+        onAddTask={(title, listId) => {
+          if (calendarDayISO) handleAddTask(title, listId, calendarDayISO);
+        }}
       />
 
       <NewListModal
@@ -649,7 +663,7 @@ const App = () => {
         selectedListId={quickAddListId || activeListId}
         statusLabel={quickAddStatus ? STATUS_LABELS[quickAddStatus] : null}
         onClose={closeQuickAdd}
-        onSave={handleAddTask}
+        onSave={(title, listId) => handleAddTask(title, listId, quickAddDate)}
       />
 
       <TaskDetailModal

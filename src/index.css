@@ -52,6 +52,7 @@ body.contrast-high {
 }
 
 .app-drag .app-no-drag,
+.app-drag .app-no-drag *,
 .app-drag button,
 .app-drag input,
 .app-drag textarea,
