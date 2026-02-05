@@ -58,7 +58,17 @@ const CalendarDayModal = ({ isOpen, dateISO, holiday, solar, tasks, lists, onClo
             </h3>
             {(holiday || solar) && (
               <div className="mt-3 flex flex-wrap gap-2">
-                {holiday && (
+                {Array.isArray(holiday) &&
+                  holiday.map((label) => (
+                    <span
+                      key={`${dateISO}-${label}`}
+                      className="px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.18em] rounded-full bg-[#f7f1f8]"
+                      style={{ color: '#8c397d' }}
+                    >
+                      {label}
+                    </span>
+                  ))}
+                {!Array.isArray(holiday) && holiday && (
                   <span
                     className="px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.18em] rounded-full bg-[#f7f1f8]"
                     style={{ color: '#8c397d' }}

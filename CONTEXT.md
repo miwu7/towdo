@@ -36,7 +36,7 @@
 - 完成音效：可开关的简短提示音。
 - 日历 6x7 网格；周日开头；当日高亮；点击日期弹出当日任务列表。
 - 日历任务以彩色条展示，最多显示 6 条，超出显示“···”；点击任务可切换完成；标题过长省略。
-- 节假日/节气显示（仅 2026 内置）：
+- 节假日/节气显示（仅 2026 内置，支持同日多标签）：
   - 节假日颜色 `#8c397d`
   - 节气颜色 `#1c8d41`
 - 所有弹窗支持 ESC 关闭。
@@ -57,7 +57,7 @@
 - Electron 窗口背景与 HTML body 背景同步为 `#f7f1f8`。
 
 ## 已知注意事项
-- 节假日/节气数据仅覆盖 2026 年，需要扩展年份。
+- 节假日/节气数据仅覆盖 2026 年（中国大陆年历+常见节日），需要扩展年份。
 - “磁贴/小组件”功能已移除。
 - 系统级“未归档”分类（不可删除），新增任务默认归入该分类。
 
@@ -68,10 +68,14 @@
 
 ## 版本发布（GitHub Actions + OSS）
 > workflow 仅在 push tag `v*` 或手动触发时执行（见 `.github/workflows/build.yml`）。
-- 示例（建议）：升版本 + 推送 + tag 触发
-  - `npm version 0.1.3`
+- 常用流程（确保 git clean，否则 `npm version` 会失败）
+  - `git status`
+  - `npm version 0.1.3`（自动更新 `package.json`/`package-lock.json` 并打 tag `v0.1.3`）
   - `git push origin main`
-  - `git push origin v0.1.3`
+  - `git push origin v0.1.3`（触发 Actions）
+- tag 已存在时：先删本地/远端再重打
+  - `git tag -d v0.1.3`
+  - `git push origin :refs/tags/v0.1.3`
 
 ## 最近修改偏好
 - “今日焦点”已更名为“今日待办”。

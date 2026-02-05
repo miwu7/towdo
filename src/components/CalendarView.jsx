@@ -99,7 +99,7 @@ const CalendarView = ({
           const holiday = getHolidayLabel(item.iso);
           const solar = getSolarTermLabel(item.iso);
           const showMonthLabel = item.day === 1;
-          const monthLabel = formatDateLabel(item.iso);
+          const monthLabel = item.day;
           const visibleTasks = tasksThisDay.slice(0, MAX_ITEMS);
           const showOverflow = tasksThisDay.length > MAX_ITEMS;
 
@@ -133,14 +133,40 @@ const CalendarView = ({
                     {showMonthLabel ? monthLabel : item.day}
                   </span>
                   {(holiday || solar) && (
-                    <span
-                      className={`px-2 py-0.5 rounded-full ${
-                        isCompact ? 'text-[8px] font-medium' : 'text-[9px] font-semibold'
-                      } ${holiday ? 'bg-[#f7f1f8]' : 'bg-emerald-50'}`}
-                      style={holiday ? { color: '#8c397d' } : { color: '#1c8d41' }}
-                    >
-                      {holiday || solar}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {Array.isArray(holiday) &&
+                        holiday.map((label) => (
+                          <span
+                            key={`${item.iso}-${label}`}
+                            className={`px-2 py-0.5 rounded-full ${
+                              isCompact ? 'text-[8px] font-medium' : 'text-[9px] font-semibold'
+                            } bg-[#f7f1f8]`}
+                            style={{ color: '#8c397d' }}
+                          >
+                            {label}
+                          </span>
+                        ))}
+                      {!Array.isArray(holiday) && holiday && (
+                        <span
+                          className={`px-2 py-0.5 rounded-full ${
+                            isCompact ? 'text-[8px] font-medium' : 'text-[9px] font-semibold'
+                          } bg-[#f7f1f8]`}
+                          style={{ color: '#8c397d' }}
+                        >
+                          {holiday}
+                        </span>
+                      )}
+                      {solar && (
+                        <span
+                          className={`px-2 py-0.5 rounded-full ${
+                            isCompact ? 'text-[8px] font-medium' : 'text-[9px] font-semibold'
+                          } bg-emerald-50`}
+                          style={{ color: '#1c8d41' }}
+                        >
+                          {solar}
+                        </span>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
