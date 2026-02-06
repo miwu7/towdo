@@ -1,18 +1,12 @@
 ﻿import React, { useEffect, useState } from 'react';
-import { Hash, ChevronDown } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 
 // 快速添加：全屏模糊 + 巨大输入框
-const QuickAddModal = ({
-  isOpen,
-  listName,
-  lists,
-  selectedListId,
-  statusLabel,
-  onClose,
-  onSave,
-}) => {
+const QuickAddModal = ({ isOpen, lists, selectedListId, onClose, onSave }) => {
   const [title, setTitle] = useState('');
   const [listId, setListId] = useState(selectedListId || '');
+  const trimmedTitle = title.trim();
+  const canSave = trimmedTitle.length > 0;
 
   useEffect(() => {
     if (!isOpen) {
@@ -37,7 +31,10 @@ const QuickAddModal = ({
 
   if (!isOpen) return null;
 
-  const currentList = lists?.find((item) => item.id === listId);
+  const handleSave = () => {
+    if (!canSave) return;
+    onSave(trimmedTitle, listId);
+  };
 
   return (
     <div
@@ -54,7 +51,13 @@ const QuickAddModal = ({
           placeholder="添加新任务..."
           value={title}
           onChange={(event) => setTitle(event.target.value)}
-          onKeyDown={(event) => event.key === 'Enter' && onSave(title, listId)}
+          onKeyDown={(event) => {
+            if (event.isComposing) return;
+            if (event.key === 'Enter') {
+              event.preventDefault();
+              handleSave();
+            }
+          }}
         />
         <div className="flex justify-between items-center border-t border-zinc-50 pt-8">
           <div className="relative">
@@ -79,8 +82,13 @@ const QuickAddModal = ({
               放弃
             </button>
             <button
-              onClick={() => onSave(title, listId)}
-              className="px-10 py-4 rounded-[22px] bg-[#8c397d] text-white text-[13px] font-semibold shadow-2xl shadow-[#8c397d]/30 active:scale-95"
+              onClick={handleSave}
+              disabled={!canSave}
+              className={`px-10 py-4 rounded-[22px] text-[13px] font-semibold shadow-2xl shadow-[#8c397d]/30 active:scale-95 ${
+                canSave
+                  ? 'bg-[#8c397d] text-white'
+                  : 'bg-zinc-200 text-zinc-400 cursor-not-allowed shadow-none'
+              }`}
             >
               立即保存
             </button>

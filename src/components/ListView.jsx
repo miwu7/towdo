@@ -1,4 +1,4 @@
-﻿import React from 'react';
+﻿import React, { useMemo } from 'react';
 import { CheckCircle2, Circle, Clock, Hash, AlertTriangle, Filter } from 'lucide-react';
 import { formatDateLabel } from '../utils/date';
 
@@ -99,6 +99,10 @@ const ListView = ({
   const isEmpty = tasks.length === 0;
   const pendingTasks = tasks.filter((task) => !task.completed);
   const doneTasks = tasks.filter((task) => task.completed);
+  const listNameById = useMemo(
+    () => new Map((lists || []).map((list) => [list.id, list.name])),
+    [lists],
+  );
 
   return (
     <div className="flex-1 overflow-y-auto no-scrollbar animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -165,7 +169,7 @@ const ListView = ({
                 <TaskCard
                   key={task.id}
                   task={task}
-                  listName={lists.find((list) => list.id === task.listId)?.name || '未归档'}
+                  listName={listNameById.get(task.listId) || '未归档'}
                   onToggle={onToggleTask}
                   onOpen={onOpenTask}
                   isCompact={isCompact}
@@ -186,7 +190,7 @@ const ListView = ({
                       <TaskCard
                         key={task.id}
                         task={task}
-                        listName={lists.find((list) => list.id === task.listId)?.name || '未归档'}
+                        listName={listNameById.get(task.listId) || '未归档'}
                         onToggle={onToggleTask}
                         onOpen={onOpenTask}
                         isCompact={isCompact}
