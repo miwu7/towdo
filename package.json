@@ -1,6 +1,6 @@
 {
   "name": "towdo-desktop",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "private": true,
   "description": "TowDo desktop app built with React + Electron + Tailwind CSS.",
   "main": "electron/main.cjs",
